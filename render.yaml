@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dk-win-live-server
+    env: node
+    buildCommand: npm install
+    startCommand: node --max-old-space-size=450 index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=450"
+    plan: free
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+    autoDeploy: true
