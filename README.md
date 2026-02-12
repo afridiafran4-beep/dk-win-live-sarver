@@ -1,2 +1,5 @@
-# dk-win-live-sarver
-LIVE DK WIN number fetcher server
+# DK WIN LIVE SERVER
+✅ Memory Optimized  
+✅ Rate Limited  
+✅ Crash Free  
+✅ API Ready  
