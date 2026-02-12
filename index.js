@@ -1,54 +1,55 @@
-
-const express = require('express');
-const fetch = require('node-fetch');
+import express from "express";
+import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-let liveData = {
-  period: null,
-  number: null,
-  lastUpdate: null
-};
+// ========================
+// SETUP
+// ========================
+app.use(cors());
+app.use(express.json());
 
-// DK WIN API
-const DK_API = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M.json';
+// ========================
+// CONFIGURATION
+// ========================
+const dkWinURL = "https://draw.ar-lottery01.com/WinGo/WinGo_1M.json?ts=1770883980736"; // DK WIN JSON URL
+let latestData = { numbers: null, period: null }; // লাইভ নাম্বার স্টোর করার জন্য
 
-async function fetchLive() {
-  try {
-    const res = await fetch(DK_API);
-    const json = await res.json();
+// ========================
+// FETCH LIVE NUMBERS
+// ========================
+async function fetchLiveNumbers() {
+    try {
+        const res = await fetch(dkWinURL, { cache: "no-store" });
+        const data = await res.json();
 
-    if (json && json.data && json.data.length > 0) {
-      const d = json.data[0];
+        // Example: JSON keys
+        const numbers = data.currentNumbers || data.numbers; // যদি currentNumbers না থাকে, data.numbers দেখ
+        const period = data.currentPeriod || data.period;
 
-      liveData.period = d.issueNumber || d.issue || null;
-      liveData.number = d.number || null;
-      liveData.lastUpdate = new Date().toLocaleString();
-
-      console.log('LIVE:', liveData);
+        latestData = { numbers, period };
+        console.log("Updated live numbers:", latestData);
+    } catch (err) {
+        console.error("Failed to fetch DK WIN numbers:", err);
     }
-  } catch (err) {
-    console.log('Fetch error:', err.message);
-  }
 }
 
-// প্রতি 2 সেকেন্ডে ফেচ করবে
-setInterval(fetchLive, 2000);
+// প্রতি 10 সেকেন্ডে ফেচ
+setInterval(fetchLiveNumbers, 10000);
+fetchLiveNumbers(); // server start সাথে সাথে fetch
 
-// API Endpoint
-app.get('/api/live', (req, res) => {
-  res.json({
-    status: 'ok',
-    source: 'DK WIN',
-    data: liveData
-  });
+// ========================
+// API ENDPOINT
+// ========================
+app.get("/api/live", (req, res) => {
+    res.json(latestData);
 });
 
-app.get('/', (req, res) => {
-  res.send('DK WIN LIVE SERVER RUNNING');
-});
-
-app.listen(PORT, () => {
-  console.log('Server running on port', PORT);
+// ========================
+// SERVER START
+// ========================
+app.listen(port, () => {
+    console.log(`DK WIN Live Server running at http://localhost:${port}`);
 });
