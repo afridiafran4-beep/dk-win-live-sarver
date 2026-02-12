@@ -1,14 +1,21 @@
 {
-  "name": "dk-win-live-sarver",
+  "name": "dkwin-live-server",
   "version": "1.0.0",
-  "description": "DK WIN Live Number Fetcher Server",
+  "description": "DK Win Live Data Server - Render Deploy Ready",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node --max-old-space-size=450 index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   },
   "engines": {
     "node": "18.x"
