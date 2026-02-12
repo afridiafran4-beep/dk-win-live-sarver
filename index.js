@@ -1,35 +1,54 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
 
-app.use(cors());
-app.use(express.json());
+const express = require('express');
+const fetch = require('node-fetch');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 let liveData = {
-  period: "0000",
-  number: "0"
+  period: null,
+  number: null,
+  lastUpdate: null
 };
 
-app.get('/', (req, res) => {
-  res.send('DK WIN Live Server Running');
-});
+// DK WIN API
+const DK_API = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M.json';
 
-app.get('/api/live', (req, res) => {
-  res.json(liveData);
-});
+async function fetchLive() {
+  try {
+    const res = await fetch(DK_API);
+    const json = await res.json();
 
-app.post('/api/live', (req, res) => {
-  const { period, number } = req.body;
+    if (json && json.data && json.data.length > 0) {
+      const d = json.data[0];
 
-  if (!period || !number) {
-    return res.status(400).json({ error: 'period & number required' });
+      liveData.period = d.issueNumber || d.issue || null;
+      liveData.number = d.number || null;
+      liveData.lastUpdate = new Date().toLocaleString();
+
+      console.log('LIVE:', liveData);
+    }
+  } catch (err) {
+    console.log('Fetch error:', err.message);
   }
+}
 
-  liveData = { period, number };
-  res.json({ success: true, liveData });
+// প্রতি 2 সেকেন্ডে ফেচ করবে
+setInterval(fetchLive, 2000);
+
+// API Endpoint
+app.get('/api/live', (req, res) => {
+  res.json({
+    status: 'ok',
+    source: 'DK WIN',
+    data: liveData
+  });
 });
 
-const PORT = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+  res.send('DK WIN LIVE SERVER RUNNING');
+});
+
 app.listen(PORT, () => {
   console.log('Server running on port', PORT);
 });
