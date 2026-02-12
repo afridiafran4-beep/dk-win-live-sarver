@@ -1,69 +1,55 @@
 const express = require("express");
-const fetch = require("node-fetch");
 const cors = require("cors");
+const https = require("https");
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-
 app.use(cors());
 app.use(express.json());
 
-// =====================
-// ROUTE - GET /
-// =====================
-app.get("/", (req, res) => {
-  res.send("DK WIN Live Number Fetcher Server is running!");
-});
+const PORT = process.env.PORT || 10000;
 
-// =====================
-// ROUTE - POST /api/live
-// =====================
-app.post("/api/live", (req, res) => {
-  const { numbers, period } = req.body;
+const DK_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_1M.json";
 
-  console.log("Received live data:");
-  console.log("Numbers:", numbers);
-  console.log("Period:", period);
+let latestData = null;
 
-  // এখানে তুমি চাইলে ডাটাবেস/ফাইল বা অন্য সার্ভারে পাঠাতে পারবে
-  // কিন্তু এখন কেবল লগে দেখাবে
+// ===== LIVE DATA FETCH =====
+function fetchLiveData() {
+    https.get(DK_URL, (res) => {
+        let data = "";
 
-  res.json({ status: "success", received: { numbers, period } });
-});
+        res.on("data", (chunk) => {
+            data += chunk;
+        });
 
-// =====================
-// OPTIONAL - Fetch DK WIN JSON periodically
-// =====================
-const DK_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_1M.json?ts=1770883980736";
-const FETCH_INTERVAL = 60000; // 60 সেকেন্ডে একবার
+        res.on("end", () => {
+            try {
+                latestData = JSON.parse(data);
+                console.log("LIVE DATA UPDATED");
+            } catch (err) {
+                console.error("JSON Parse Error:", err.message);
+            }
+        });
 
-async function fetchAndLog() {
-  try {
-    const response = await fetch(DK_URL, { cache: "no-store" });
-    const data = await response.json();
-
-    // উদাহরণ: JSON থেকে লাইভ নাম্বার ও পিরিয়ড
-    const numbers = data.currentNumbers;
-    const period = data.currentPeriod;
-
-    console.log("Fetched from DK WIN:", numbers, period);
-
-    // Render সার্ভারে পাঠাতে চাইলে এখানে POST করা যাবে
-    await fetch(`https://dk-win-live-sarver.onrender.com/api/live`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numbers, period })
+    }).on("error", (err) => {
+        console.error("Fetch Error:", err.message);
     });
-  } catch (err) {
-    console.error("Fetch error:", err);
-  } finally {
-    setTimeout(fetchAndLog, FETCH_INTERVAL);
-  }
 }
 
-// Uncomment করলে DK WIN থেকে স্বয়ংক্রিয়ভাবে নাম্বার POST করবে
-// fetchAndLog();
+// প্রতি 3 সেকেন্ডে একবার আপডেট
+setInterval(fetchLiveData, 3000);
+
+// ===== API ENDPOINT =====
+app.get("/api/live", (req, res) => {
+    if (!latestData) {
+        return res.json({ status: false, message: "Loading live data..." });
+    }
+    res.json(latestData);
+});
+
+app.get("/", (req, res) => {
+    res.send("DK WIN LIVE SERVER RUNNING OK");
+});
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log("Server running on port", PORT);
 });
