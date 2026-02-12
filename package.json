@@ -1,13 +1,17 @@
 {
-  "name": "dk-win-live-server",
+  "name": "dk-win-live-sarver",
   "version": "1.0.0",
-  "description": "LIVE DK WIN number fetcher server",
+  "description": "DK WIN Live Number Fetcher Server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
+    "node-fetch": "^3.3.1",
     "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
